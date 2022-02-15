@@ -340,13 +340,18 @@ write.csv(DATA_DET_LONG, "./data_DET_LONG.csv")
 # write.csv(DATA_DET, "./data_DET.csv")
 
 head(DATA_DET_LONG)
+DATA_DET_LONG$phase_space  <- factor(DATA_DET_LONG$phase_space, 
+                                     levels = c("target", "trial"),
+                                     labels = c("Target", "Trial"))
 ggplot(DATA_DET_LONG, 
        aes(x=lag, y = det)) +
   geom_point(aes(group=group, col=group), shape=16, alpha=0.5, 
              position=position_jitterdodge())+
-  geom_boxplot(aes(group=paste(lag,group), fill=group), alpha=0.5,
+  geom_boxplot(aes(group=paste(lag, group), fill=group), alpha=0.5,
                position=position_dodge(), outlier.shape = NA)+
   facet_wrap(~phase_space)+
+  scale_color_manual(values=c("black", "firebrick"))+
+  scale_fill_manual(values=c("black", "firebrick"))+
   scale_x_discrete(name = "Lag") +
   scale_y_continuous(name = "Determinant") +
   labs(fill = "Group", col="Group")+ 
@@ -374,25 +379,6 @@ DATA_DET$var_diff <- with(DATA_DET, log_exp_var_target-log_exp_var_trial)
 DATA_DET$det_diff <- with(DATA_DET, log_exp_var_target-log_exp_var_trial)
 write.csv(DATA_DET, "./data_DET.csv")
 
-
-ggplot(DATA_DET, 
-       aes(x=lag, y = det_diff)) +
-  geom_point(aes(group=group, col=group), shape=16, alpha=1, 
-             position=position_jitterdodge())+
-  geom_boxplot(aes(group=paste(lag,group), fill=group), alpha=0.5,
-               position=position_dodge(), outlier.shape = NA)+
-  scale_x_discrete(name = "Lag") +
-  scale_y_continuous(name = "Determinant (Target-Trial)") +
-  labs(fill = "Group", col="Group")+ 
-  theme_bw()+
-  theme(axis.text=element_text(size=12, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        legend.title=element_text(size=12, face="bold"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
-        legend.position = "bottom")
 
 # Analyses of the Determinants ----
 head(DATA_DET)
@@ -719,14 +705,33 @@ ggplot(TRIAL_PRED_DATA, aes(x =lag1_error, y = pred_CE)) +
   scale_x_continuous(limits=c(-1,1))
 
 PRED_DATA <- rbind(TARGET_PRED_DATA, TRIAL_PRED_DATA)
+head(PRED_DATA)
+
+ggplot(PRED_DATA, aes(x =lag1_error, y = pred_CE)) +
+  geom_line(aes(lty=phase, col=group), lwd=1.5) +
+  facet_wrap(~phase)+
+  scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-1,1)) +
+  scale_y_continuous(name = expression(bold(Constant~Error~n[k]~(s)))) +
+  theme_bw()+
+  scale_color_manual(values=c("black", "firebrick"))+
+  labs(col="Group", lty="Phase")+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.title=element_blank(),
+        legend.position = "bottom")
+
 
 ggplot(PRED_DATA, aes(x =lag1_error, y = pred_AE)) +
   geom_line(aes(lty=phase, col=group), lwd=1.5) +
-  #facet_wrap(~group)+
-  scale_x_continuous(name = expression(bold(Constant~Error~n[k]~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Absolute~Error~n[k]+1~(s)))) +
+  facet_wrap(~phase)+
+  scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-1,1)) +
+  scale_y_continuous(name = expression(bold(Absolute~Error~n[k]~(s)))) +
   theme_bw()+
-  #scale_color_manual(values=c("black", "grey40"))+
+  scale_color_manual(values=c("black", "firebrick"))+
   labs(col="Group", lty="Phase")+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -747,27 +752,30 @@ MERGED$det_target.c <- MERGED$det_target - mean(MERGED$det_target)
 mod1 <- lm(ave_ae_Retention~rand.c,
            data=MERGED)
 summary(mod1)
-plot(mod1)
+#plot(mod1)
   
 # M ~ X
 mod2 <- lm(det_target~rand.c,
            data=MERGED)
 summary(mod2)
-plot(mod2)
+#plot(mod2)
 
 # Y ~ X + M
 mod3 <- lm(ave_ae_Retention~rand.c*det_target.c,
            data=MERGED)
 summary(mod3)
 vif(mod3)
-plot(mod3)
+#plot(mod3)
 
 head(MERGED)
 ggplot(MERGED, aes(x = det_target , y = ave_ae_Retention)) +
-  geom_point(aes(col=group), shape=16)+ 
+  geom_point(aes(fill=group), shape=21)+ 
   stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  scale_color_manual(values=c("black", "firebrick"))+
+  scale_fill_manual(values=c("black", "red"))+
+  labs(col="Group", fill="Group")+
   scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Average Absolute Error (Retention)") +
+  scale_y_continuous(name = "Average Retention AE (s)", limits = c(0,1)) +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -784,27 +792,30 @@ ggplot(MERGED, aes(x = det_target , y = ave_ae_Retention)) +
 mod1 <- lm(ave_ae_Transfer~rand.c,
            data=MERGED)
 summary(mod1)
-plot(mod1)
+#plot(mod1)
 
 # M ~ X
 mod2 <- lm(det_target~rand.c,
            data=MERGED)
 summary(mod2)
-plot(mod2)
+#plot(mod2)
 
 # Y ~ X + M
 mod3 <- lm(ave_ae_Transfer~rand.c*det_target.c,
            data=MERGED)
 summary(mod3)
 vif(mod3)
-plot(mod3)
+#plot(mod3)
 
 head(MERGED)
 ggplot(MERGED, aes(x = det_target , y = ave_ae_Transfer)) +
   geom_point(aes(col=group), shape=16)+ 
   stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  scale_color_manual(values=c("black", "firebrick"))+
+  scale_fill_manual(values=c("black", "red"))+
+  labs(col="Group", fill="Group")+
   scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Average Absolute Error (Transfer)") +
+  scale_y_continuous(name = "Average Tranfer AE (s)", limits = c(0,1)) +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
