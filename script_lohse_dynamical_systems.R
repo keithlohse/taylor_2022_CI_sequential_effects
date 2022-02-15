@@ -2,7 +2,7 @@ library(car); library(patchwork); library(ez)
 library(ggExtra); library(mediation); library(tidyverse)
 
 getwd()
-setwd("C:/Users/kelop/Box/Trainees/Sarah Taylor/Comps Project")
+setwd("~/GitHub/taylor_2022_CI_sequential_effects")
 list.files("./Data/")
 
 # 1.0 Visualizing Data ---------------------------------------------------------
@@ -153,7 +153,7 @@ ggplot(ACQ3, aes(x =target_lag_hold_time, y = hold_time)) +
 
 #Figure 2B: Constant Error
 ggplot(ACQ3, aes(x =target_lag_constant_error, y = constant_error)) +
-  stat_ellipse(aes(group=paste(participant, Target), col=Target), alpha=0.5, level=0.80)+
+  stat_ellipse(aes(group=paste(participant)), alpha=0.5, level=0.80)+
   facet_wrap(~group)+
   #scale_fill_colorblind()+
   #scale_color_grey()+
@@ -173,7 +173,7 @@ ggplot(ACQ3, aes(x =target_lag_constant_error, y = constant_error)) +
 
 #Figure 2C: Absolute Error
 ggplot(ACQ3, aes(x =target_lag_absolute_error, y = absolute_error)) +
-  stat_ellipse(aes(group=paste(participant, Target), col=Target), alpha=0.5, level=0.80)+
+  stat_ellipse(aes(group=paste(participant)), alpha=0.5, level=0.80)+
   facet_wrap(~group)+
   #scale_fill_colorblind()+
   #scale_color_grey()+
@@ -365,7 +365,7 @@ DATA_DET_LONG$explained_variance <- 1-DATA_DET_LONG$det
 DATA_DET_LONG$log_exp_var <- log(DATA_DET_LONG$explained_variance+1)
 head(DATA_DET_LONG)
 
-DATA_DET <- DATA_DET_LONG %>% select(-label) %>%
+DATA_DET <- DATA_DET_LONG %>% dplyr::select(-label) %>%
   pivot_wider(names_from = phase_space, values_from = c(det, explained_variance, log_exp_var))
 
 head(DATA_DET)
@@ -470,7 +470,7 @@ write.csv(MERGED, "./data_DYNAMIC_MERGED.csv")
 # Correlation Matrices in Target Space ----
 head(ACQ_by_TARGET)
 DAT1<- ACQ_by_TARGET %>% ungroup() %>% 
-  select(c(participant, group, constant_error, 
+  dplyr::select(c(participant, group, constant_error, 
            target_lag_constant_error, target_lag_2_constant_error,
            target_lag_3_constant_error, target_lag_4_constant_error)) 
 DAT1 <- na.omit(DAT1)
@@ -530,7 +530,7 @@ BLOCK_COR_MAT
 # Correlation Matrices in Trial Space ----
 head(ACQ_by_TRIAL)
 DAT2<- ACQ_by_TRIAL %>% ungroup() %>% 
-  select(c(participant, group, constant_error, 
+  dplyr::select(c(participant, group, constant_error, 
            trial_lag_constant_error, trial_lag_2_constant_error,
            trial_lag_3_constant_error, trial_lag_4_constant_error)) 
 DAT2 <- na.omit(DAT2)
@@ -586,12 +586,13 @@ BLOCK_COR_MAT
 
 
 # Multilevel Model Approach to Change ----
-ggplot(ACQ3[ACQ3$participant==108,], 
-       aes(x =trial_lag_constant_error, y = constant_error)) +
+head(ACQ3)
+ggplot(ACQ3[ACQ3$participant==105,], 
+       aes(x =target_lag_constant_error, y = constant_error)) +
   geom_line() +
   geom_point(shape=16) +
   scale_x_continuous(name = expression(bold(Constant~Error~n[k]~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Constant~Error~n[k]+1~(s))), limits=c(-1,1)) +
+  scale_y_continuous(name = expression(bold(Change~AE~n[k]+1~(s))), limits=c(-1,1)) +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -601,40 +602,6 @@ ggplot(ACQ3[ACQ3$participant==108,],
         panel.grid.minor = element_blank(),
         strip.text = element_text(size=12, face="bold"),
         legend.position = "bottom")
-
-ggplot(ACQ_by_TARGET, aes(x =target_lag_constant_error, y = constant_error)) +
-  stat_smooth(aes(group=participant, col=participant),
-              method="lm", #formula=y~x+I(x^2), 
-              se=FALSE, alpha=0.5, lwd=0.5)+
-  facet_wrap(~group)+
-  scale_x_continuous(name = expression(bold(Constant~Error~n[k]~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Constant~Error~n[k]+1~(s)))) +
-  theme_bw()+
-  theme(axis.text=element_text(size=12, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        legend.title=element_text(size=12, face="bold"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
-        legend.position = "none")
-
-ggplot(ACQ_by_TRIAL, aes(x =trial_lag_constant_error, y = constant_error)) +
-  stat_smooth(aes(group=participant, col=participant),
-              method="lm", #formula=y~x+I(x^2), 
-              se=FALSE, alpha=0.5, lwd=0.5)+
-  facet_wrap(~group)+
-  scale_x_continuous(name = expression(bold(Constant~Error~n~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Constant~Error~n+1~(s)))) +
-  theme_bw()+
-  theme(axis.text=element_text(size=12, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        legend.title=element_text(size=12, face="bold"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
-        legend.position = "none")
 
 library(lme4); library(lmerTest)
 target_mod_CE <- lmer(constant_error~
@@ -769,3 +736,5 @@ ggplot(PRED_DATA, aes(x =lag1_error, y = pred_AE)) +
         strip.text = element_text(size=12, face="bold"),
         legend.title=element_blank(),
         legend.position = "bottom")
+
+
