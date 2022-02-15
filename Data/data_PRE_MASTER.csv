@@ -1,4 +1,4 @@
-Participant,Estimation,Experiment,Session,Trial,Condition,Error Score,Group
+participant,estimation,experiment,session,trial,target,constant_error,group
 201,No Estimation,Timing-Estimation,Pre-Testing,1,1700,-1660,Blocked
 201,No Estimation,Timing-Estimation,Pre-Testing,2,1500,-1436,Blocked
 201,No Estimation,Timing-Estimation,Pre-Testing,3,1900,-1836,Blocked

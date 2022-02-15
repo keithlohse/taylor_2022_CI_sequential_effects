@@ -738,3 +738,79 @@ ggplot(PRED_DATA, aes(x =lag1_error, y = pred_AE)) +
         legend.position = "bottom")
 
 
+# 4.0 Correlations with long-term learning ----
+# Contrast coding group and det_target
+MERGED$rand.c <-as.numeric(MERGED$group)-1.5
+MERGED$det_target.c <- MERGED$det_target - mean(MERGED$det_target)
+
+# Y ~ X
+mod1 <- lm(ave_ae_Retention~rand.c,
+           data=MERGED)
+summary(mod1)
+plot(mod1)
+  
+# M ~ X
+mod2 <- lm(det_target~rand.c,
+           data=MERGED)
+summary(mod2)
+plot(mod2)
+
+# Y ~ X + M
+mod3 <- lm(ave_ae_Retention~rand.c*det_target.c,
+           data=MERGED)
+summary(mod3)
+vif(mod3)
+plot(mod3)
+
+head(MERGED)
+ggplot(MERGED, aes(x = det_target , y = ave_ae_Retention)) +
+  geom_point(aes(col=group), shape=16)+ 
+  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  scale_x_continuous(name = "Determinant over Five Trials") +
+  scale_y_continuous(name = "Average Absolute Error (Retention)") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.title=element_blank(),
+        legend.position = "bottom")
+
+
+# Mediation Analysis: AE on Transfer ------------------------------------------
+# Y ~ X
+mod1 <- lm(ave_ae_Transfer~rand.c,
+           data=MERGED)
+summary(mod1)
+plot(mod1)
+
+# M ~ X
+mod2 <- lm(det_target~rand.c,
+           data=MERGED)
+summary(mod2)
+plot(mod2)
+
+# Y ~ X + M
+mod3 <- lm(ave_ae_Transfer~rand.c*det_target.c,
+           data=MERGED)
+summary(mod3)
+vif(mod3)
+plot(mod3)
+
+head(MERGED)
+ggplot(MERGED, aes(x = det_target , y = ave_ae_Transfer)) +
+  geom_point(aes(col=group), shape=16)+ 
+  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  scale_x_continuous(name = "Determinant over Five Trials") +
+  scale_y_continuous(name = "Average Absolute Error (Transfer)") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.title=element_blank(),
+        legend.position = "bottom")
