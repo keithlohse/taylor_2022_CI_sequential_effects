@@ -1,0 +1,85 @@
+participant,Estimation,Group,ME1,ME2,ME3,ME_AVE,PT1,PT2
+101,Estimation,Blocked,90,70,70,76.66666667,100,100
+102,Estimation,Random ,80,55,65,66.66666667,75,75
+103,Estimation,Blocked,55,20,40,38.33333333,20,30
+104,Estimation,Random ,40,30,45,38.33333333,50,40
+105,Estimation,Blocked,90,90,90,90,85,90
+106,Estimation,Random ,75,75,75,75,75,85
+107,Estimation,Blocked,55,40,45,46.66666667,55,55
+108,Estimation,Random ,45,55,55,51.66666667,25,25
+109,Estimation,Blocked,85,95,90,90,80,80
+110,Estimation,Random ,30,20,20,23.33333333,20,10
+111,Estimation,Blocked,95,90,85,90,95,85
+112,Estimation,Random ,70,70,55,65,80,80
+113,Estimation,Blocked,50,70,85,68.33333333,55,70
+114,Estimation,Random ,65,75,75,71.66666667,60,60
+115,Estimation,Blocked,40,45,40,41.66666667,30,30
+116,Estimation,Random ,80,90,70,80,55,60
+117,Estimation,Blocked,75,68,70,71,80,70
+118,Estimation,Random ,85,70,75,76.66666667,85,90
+119,Estimation,Blocked,65,75,80,73.33333333,75,80
+120,Estimation,Random ,70,60,60,63.33333333,85,85
+121,Estimation,Blocked,50,50,55,51.66666667,35,37
+122,Estimation,Random ,98,100,100,99.33333333,95,100
+123,Estimation,Random ,72,70,80,74,85,85
+124,Estimation,Blocked,75,85,85,81.66666667,75,80
+125,Estimation,Blocked,30,30,27,29,30,30
+126,Estimation,Random ,100,100,110,103.3333333,95,110
+127,Estimation,Blocked,95,75,85,85,85,85
+128,Estimation,Random ,75,72,70,72.33333333,70,70
+129,Estimation,Blocked,85,85,95,88.33333333,90,90
+130,Estimation,Random ,70,80,80,76.66666667,80,90
+131,Estimation,Blocked,70,70,80,73.33333333,60,60
+132,Estimation,Random ,96,85,85,88.66666667,105,105
+133,Estimation,Blocked,105,105,105,105,105,105
+134,Estimation,Random ,35,35,40,36.66666667,25,25
+135,Estimation,Blocked,90,92,89,90.33333333,85,85
+136,Estimation,Random ,35,40,40,38.33333333,30,35
+137,Estimation,Blocked,75,65,70,70,70,60
+138,Estimation,Random ,85,70,70,75,75,75
+139,Estimation,Blocked,75,70,70,71.66666667,70,70
+140,Estimation,Random ,44,47,52,47.66666667,37,37
+141,Estimation,Blocked,85,90,80,85,80,90
+142,Estimation,Random ,35,40,40,38.33333333,30,25
+201,No Est,Blocked,35,40,40,38.33333333,25,40
+202,No Est,Random,90,60,70,73.33333333,45,35
+203,No Est,Blocked,15,20,20,18.33333333,8,8
+204,No Est,Random,50,50,70,56.66666667,60,60
+205,No Est,Blocked,50,80,100,76.66666667,110,100
+206,No Est,Random,40,40,50,43.33333333,30,30
+207,No Est,Blocked,40,50,50,46.66666667,20,20
+208,No Est,Random,60,50,80,63.33333333,40,40
+209,No Est,Blocked,80,100,110,96.66666667,100,100
+210,No Est,Random,80,80,70,76.66666667,80,80
+211,No Est,Blocked,65,80,75,73.33333333,100,85
+212,No Est,Random,40,40,45,41.66666667,30,25
+213,No Est,Blocked,35,40,60,45,20,40
+214,No Est,Random,30,30,25,28.33333333,25,25
+215,No Est,Blocked,35,43,35,37.66666667,30,30
+216,No Est,Random,40,40,35,38.33333333,30,30
+217,No Est,Blocked,35,30,25,30,25,30
+218,No Est,Random,70,40,30,46.66666667,90,80
+219,No Est,Blocked,70,80,80,76.66666667,70,70
+220,No Est,Random,75,70,65,70,55,55
+221,No Est,Blocked,105,100,80,95,45,45
+222,No Est,Random,20,20,20,20,20,20
+223,No Est,Blocked,10,9,8,9,10,9
+224,No Est,Random,80,60,60,66.66666667,80,80
+225,No Est,Blocked,40,10,30,26.66666667,40,40
+226,No Est,Random,40,50,45,45,40,40
+227,No Est,Blocked,40,50,40,43.33333333,50,50
+228,No Est,Random,5,5,5,5,10,10
+229,No Est,Blocked,50,50,50,50,60,55
+230,No Est,Random,85,70,75,76.66666667,50,50
+231,No Est,Blocked,35,35,40,36.66666667,15,15
+232,No Est,Random,40,20,15,25,20,20
+233,No Est,Blocked,30,50,60,46.66666667,70,70
+234,No Est,Random,45,35,25,35,25,25
+235,No Est,Blocked,65,67,60,64,67,67
+236,No Est,Random,45,50,50,48.33333333,35,35
+237,No Est,Blocked,55,70,50,58.33333333,20,15
+238,No Est,Random,25,35,35,31.66666667,35,40
+239,No Est,Blocked,50,30,40,40,40,40
+240,No Est,Random,30,25,30,28.33333333,40,40
+241,No Est,Blocked,45,40,40,41.66666667,40,45
+242,No Est,Random,85,80,70,78.33333333,50,30

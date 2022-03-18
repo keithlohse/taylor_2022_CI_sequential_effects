@@ -375,8 +375,8 @@ DATA_DET <- DATA_DET_LONG %>% dplyr::select(-label) %>%
 
 head(DATA_DET)
 
-DATA_DET$var_diff <- with(DATA_DET, log_exp_var_target-log_exp_var_trial)
-DATA_DET$det_diff <- with(DATA_DET, log_exp_var_target-log_exp_var_trial)
+DATA_DET$var_diff <- with(DATA_DET, log_exp_var_Target-log_exp_var_Trial)
+DATA_DET$det_diff <- with(DATA_DET, log_exp_var_Target-log_exp_var_Trial)
 write.csv(DATA_DET, "./data_DET.csv")
 
 
@@ -398,7 +398,7 @@ ezANOVA(
 
 
 ezANOVA(
-  data=DATA_DET_LONG[DATA_DET_LONG$phase_space=="trial",]
+  data=DATA_DET_LONG[DATA_DET_LONG$phase_space=="Trial",]
   , dv = .(det)
   , wid =.(participant)
   , within = .(lag)
@@ -415,10 +415,10 @@ head(DATA_DET)
 DATA_DET %>% group_by(group, lag) %>%
   summarize(
     subs = length(unique(participant)),      
-    ave_det_target = mean(det_target),
-    SD_det_target = sd(det_target),
-    ave_det_trial = mean(det_trial),
-    SD_det_trial = sd(det_trial),
+    ave_det_target = mean(det_Target),
+    SD_det_target = sd(det_Target),
+    ave_det_trial = mean(det_Trial),
+    SD_det_trial = sd(det_Trial),
     ave_det_diff = mean(det_diff),
     SD_det_diff = sd(det_diff),)
 
@@ -442,7 +442,7 @@ head(POST_AVE)
 head(DATA_DET)
 
 MERGED <- merge(POST_AVE, DATA_DET[DATA_DET$lag=="4back",
-                                   c("participant", "det_target", "det_trial", "det_diff")], 
+                                   c("participant", "det_Target", "det_Trial", "det_diff")], 
                 by="participant")
 head(MERGED)
 
@@ -746,7 +746,7 @@ ggplot(PRED_DATA, aes(x =lag1_error, y = pred_AE)) +
 # 4.0 Correlations with long-term learning ----
 # Contrast coding group and det_target
 MERGED$rand.c <-as.numeric(MERGED$group)-1.5
-MERGED$det_target.c <- MERGED$det_target - mean(MERGED$det_target)
+MERGED$det_Target.c <- MERGED$det_Target - mean(MERGED$det_Target)
 
 # Y ~ X
 mod1 <- lm(ave_ae_Retention~rand.c,
@@ -755,20 +755,20 @@ summary(mod1)
 #plot(mod1)
   
 # M ~ X
-mod2 <- lm(det_target~rand.c,
+mod2 <- lm(det_Target~rand.c,
            data=MERGED)
 summary(mod2)
 #plot(mod2)
 
 # Y ~ X + M
-mod3 <- lm(ave_ae_Retention~rand.c*det_target.c,
+mod3 <- lm(ave_ae_Retention~rand.c*det_Target.c,
            data=MERGED)
 summary(mod3)
 vif(mod3)
 #plot(mod3)
 
 head(MERGED)
-ggplot(MERGED, aes(x = det_target , y = ave_ae_Retention)) +
+ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
   geom_point(aes(fill=group), shape=21)+ 
   stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
   scale_color_manual(values=c("black", "firebrick"))+
@@ -795,20 +795,20 @@ summary(mod1)
 #plot(mod1)
 
 # M ~ X
-mod2 <- lm(det_target~rand.c,
+mod2 <- lm(det_Target~rand.c,
            data=MERGED)
 summary(mod2)
 #plot(mod2)
 
 # Y ~ X + M
-mod3 <- lm(ave_ae_Transfer~rand.c*det_target.c,
+mod3 <- lm(ave_ae_Transfer~rand.c*det_Target.c,
            data=MERGED)
 summary(mod3)
 vif(mod3)
 #plot(mod3)
 
 head(MERGED)
-ggplot(MERGED, aes(x = det_target , y = ave_ae_Transfer)) +
+ggplot(MERGED, aes(x = det_Target , y = ave_ae_Transfer)) +
   geom_point(aes(col=group), shape=16)+ 
   stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
   scale_color_manual(values=c("black", "firebrick"))+
@@ -825,3 +825,95 @@ ggplot(MERGED, aes(x = det_target , y = ave_ae_Transfer)) +
         strip.text = element_text(size=12, face="bold"),
         legend.title=element_blank(),
         legend.position = "bottom")
+
+# 5.0. Correlations with Effort/Estimation Accuracy ----------------------------
+head(ACQ3)
+EEM <- ACQ3 %>% group_by(participant) %>% summarize(EEM = mean(error_estimate_AE, na.rm=TRUE))
+
+head(MERGED)
+MERGED <- merge(MERGED, EEM, by="participant") 
+head(MERGED)
+ggplot(MERGED, aes(x = det_Target , y = EEM)) +
+  geom_point(aes(col=group), shape=16)+ 
+  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  scale_color_manual(values=c("black", "firebrick"))+
+  scale_fill_manual(values=c("black", "red"))+
+  labs(col="Group", fill="Group")+
+  scale_x_continuous(name = "Determinant over Five Trials") +
+  scale_y_continuous(name = "Error Estimation Mismatch") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.title=element_blank(),
+        legend.position = "bottom")
+
+# Y ~ X
+mod1 <- lm(EEM~rand.c,
+           data=MERGED)
+summary(mod1)
+#plot(mod1)
+
+# M ~ X
+mod2 <- lm(det_Target~rand.c,
+           data=MERGED)
+summary(mod2)
+#plot(mod2)
+
+# Y ~ X + M
+mod3 <- lm(EEM~rand.c*det_Target.c,
+           data=MERGED)
+summary(mod3)
+vif(mod3)
+
+# RSME
+list.files("./Data/")
+RSME<-read.csv("./Data/data_RSME.csv", header = TRUE, sep=",",  
+              na.strings=c("NA","NaN"," ",""), stringsAsFactors = TRUE)
+head(RSME)
+MERGED <- merge(MERGED, RSME[, c("participant", "ME_AVE")], by="participant") 
+head(MERGED)
+
+ggplot(MERGED, aes(x = det_Target , y = ME_AVE)) +
+  geom_point(aes(col=group), shape=16)+ 
+  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  scale_color_manual(values=c("black", "firebrick"))+
+  scale_fill_manual(values=c("black", "red"))+
+  labs(col="Group", fill="Group")+
+  scale_x_continuous(name = "Determinant over Five Trials") +
+  scale_y_continuous(name = "Average Mental Effort (RSME)") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.title=element_blank(),
+        legend.position = "bottom")
+
+
+
+# Y ~ X
+mod1 <- lm(ME_AVE~rand.c,
+           data=MERGED)
+summary(mod1)
+#plot(mod1)
+
+# M ~ X
+mod2 <- lm(ME_AVE~rand.c,
+           data=MERGED)
+summary(mod2)
+#plot(mod2)
+
+# Y ~ X + M
+mod3 <- lm(ME_AVE~rand.c*det_Target.c,
+           data=MERGED)
+summary(mod3)
+vif(mod3)
+
+
+

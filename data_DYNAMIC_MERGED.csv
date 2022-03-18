@@ -1,4 +1,4 @@
-"","participant","group","ave_ae_Retention","ave_ae_Transfer","ave_ce_Retention","ave_ce_Transfer","ave_ve_Retention","ave_ve_Transfer","det_target","det_trial","det_diff"
+"","participant","group","ave_ae_Retention","ave_ae_Transfer","ave_ce_Retention","ave_ce_Transfer","ave_ve_Retention","ave_ve_Transfer","det_Target","det_Trial","det_diff"
 "1",101,"Blocked",0.296958333333333,0.3988125,0.281208333333333,0.3746875,0.286967045398818,0.216229420986137,0.931577769622963,0.974923052439185,0.0414153286402888
 "2",102,"Random",0.17675,0.197625,-0.118,-0.19575,0.172431965159293,0.12181652870882,0.272624583109,0.935827911076489,0.484406040933754
 "3",103,"Blocked",0.500458333333333,0.4535625,-0.500458333333333,-0.4535625,0.121291950758657,0.143202871828745,0.654632794878578,0.692148078874663,0.0282809542747359
