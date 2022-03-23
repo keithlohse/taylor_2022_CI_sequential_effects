@@ -112,11 +112,11 @@ head(POST)
 
 # Plotting Sequential Effects on Constant Error 
 head(ACQ)
-ggplot(ACQ[ACQ$participant==101,], 
-       aes(x =trial_total, y = constant_error)) +
+ggplot(ACQ[ACQ$participant==132,], 
+       aes(x=trial_total, y = constant_error)) +
   geom_line(col="black", alpha=1)+
   geom_point(aes(fill=Target), shape=21, size=2) +
-  #facet_wrap(~Target)+
+  facet_wrap(~Target)+
   scale_x_continuous(name = "Trial Number") +
   scale_y_continuous(name = "Constant Error", limits=c(-1,1)) +
   #labs(fill = "Group", col="Group", shape="Estimation", lty="Estimation")+ 
@@ -132,7 +132,7 @@ ggplot(ACQ[ACQ$participant==101,],
 
 
 # 2.0 Determinant Approach: Comparing Previous Trial to Previous Target ----
-# Figure 2A: Hold Time
+# Ellipses: Hold Time
 ggplot(ACQ3, aes(x =target_lag_hold_time, y = hold_time)) +
   stat_ellipse(aes(group=paste(participant, Target), col=Target), alpha=0.5, level=0.80)+
   facet_wrap(~group)+
@@ -151,7 +151,7 @@ ggplot(ACQ3, aes(x =target_lag_hold_time, y = hold_time)) +
         strip.text = element_text(size=12, face="bold"),
         legend.position = "none")
 
-#Figure 2B: Constant Error
+# Ellipses: Constant Error
 ggplot(ACQ3, aes(x =target_lag_constant_error, y = constant_error)) +
   stat_ellipse(aes(group=paste(participant)), alpha=0.5, level=0.80)+
   facet_wrap(~group)+
@@ -171,7 +171,7 @@ ggplot(ACQ3, aes(x =target_lag_constant_error, y = constant_error)) +
         legend.position = "none")
 
 
-#Figure 2C: Absolute Error
+# Ellipses: Absolute Error
 ggplot(ACQ3, aes(x =target_lag_absolute_error, y = absolute_error)) +
   stat_ellipse(aes(group=paste(participant)), alpha=0.5, level=0.80)+
   facet_wrap(~group)+
@@ -190,16 +190,15 @@ ggplot(ACQ3, aes(x =target_lag_absolute_error, y = absolute_error)) +
         strip.text = element_text(size=12, face="bold"),
         legend.position = "none")
 
+# Figure 3 D and C: Autocorrelations ----
 # Graphs for individual participants, 101 and 107 blocked, 102 and 126, random
-ggplot(ACQ3[ACQ3$participant==126,], 
-       aes(x =target_lag_constant_error, y = constant_error)) +
-  geom_path(aes(group=participant, col=Target), alpha=0.5)+
-  geom_point(aes(group=Target, col=Target), alpha=0.5) +
-  stat_ellipse(aes(group=participant), col="black", lwd=1.5, level=0.95)+
-  #scale_fill_colorblind()+
-  #scale_colour_colorblind()+
-  scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Constant~Error~n[k]~(s))), limits=c(-1,1)) +
+ggplot(ACQ[ACQ$participant==126,], 
+       aes(x=trial_total, y = constant_error)) +
+  geom_line(col="black", alpha=1)+
+  geom_point(aes(fill=Target), shape=21, size=2) +
+  facet_wrap(~Target, scales="free")+
+  scale_x_continuous(name = "Trial Number") +
+  scale_y_continuous(name = "Constant Error", limits=c(-0.5,0.5)) +
   #labs(fill = "Group", col="Group", shape="Estimation", lty="Estimation")+ 
   theme_bw()+
   theme(axis.text=element_text(size=10, color="black"), 
@@ -209,7 +208,32 @@ ggplot(ACQ3[ACQ3$participant==126,],
         plot.title=element_text(size=12, face="bold", hjust=0.5),
         panel.grid.minor = element_blank(),
         strip.text = element_text(size=12, face="bold"),
-        legend.position = "bottom")
+        legend.position = "none")
+
+# Graphs for individual participants, 101 and 107 blocked, 102 and 126, random
+
+cor(x =ACQ3[ACQ3$participant==126,]$target_lag_constant_error, 
+          y = ACQ3[ACQ3$participant==126,]$constant_error, use="complete.obs")
+
+ggplot(ACQ3[ACQ3$participant==126,], 
+       aes(x =target_lag_constant_error, y = constant_error)) +
+  geom_path(aes(group=participant, col=Target), alpha=0.5)+
+  geom_point(aes(group=Target, col=Target), alpha=0.5) +
+  stat_ellipse(aes(group=participant), col="black", lwd=1.5, level=0.95)+
+  #scale_fill_colorblind()+
+  #scale_colour_colorblind()+
+  scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-0.5, 0.5)) +
+  scale_y_continuous(name = expression(bold(Constant~Error~n[k]~(s))), limits=c(-0.5, 0.5)) +
+  #labs(fill = "Group", col="Group", shape="Estimation", lty="Estimation")+ 
+  theme_bw()+
+  theme(axis.text=element_text(size=10, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        legend.title=element_text(size=12, face="bold"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.position = "none")
 
 
 # Calculating the Determinant of the Data ----
@@ -748,29 +772,19 @@ ggplot(PRED_DATA, aes(x =lag1_error, y = pred_AE)) +
 MERGED$rand.c <-as.numeric(MERGED$group)-1.5
 MERGED$det_Target.c <- MERGED$det_Target - mean(MERGED$det_Target)
 
-# Y ~ X
-mod1 <- lm(ave_ae_Retention~rand.c,
+mod1 <- lm(det_Target~rand.c+ave_ae_Retention,
            data=MERGED)
 summary(mod1)
-#plot(mod1)
-  
-# M ~ X
-mod2 <- lm(det_Target~rand.c,
+
+mod2 <- lm(ave_ae_Retention~rand.c+det_Target.c,
            data=MERGED)
 summary(mod2)
-#plot(mod2)
-
-# Y ~ X + M
-mod3 <- lm(ave_ae_Retention~rand.c*det_Target.c,
-           data=MERGED)
-summary(mod3)
-vif(mod3)
-#plot(mod3)
+vif(mod2)
 
 head(MERGED)
-ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
-  geom_point(aes(fill=group), shape=21)+ 
-  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+p <- ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
+  geom_point(aes(col=group), shape=16)+ 
+  stat_smooth(method="lm", se=FALSE) + 
   scale_color_manual(values=c("black", "firebrick"))+
   scale_fill_manual(values=c("black", "red"))+
   labs(col="Group", fill="Group")+
@@ -786,31 +800,27 @@ ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
         legend.title=element_blank(),
         legend.position = "bottom")
 
+ggMarginal(p,
+           type = 'boxplot',
+           margins = 'both',
+           size = 5, colour = 'black',
+           groupFill = TRUE)
+
 
 # Mediation Analysis: AE on Transfer ------------------------------------------
-# Y ~ X
-mod1 <- lm(ave_ae_Transfer~rand.c,
+mod1 <- lm(det_Target~rand.c+ave_ae_Transfer,
            data=MERGED)
 summary(mod1)
-#plot(mod1)
 
-# M ~ X
-mod2 <- lm(det_Target~rand.c,
+mod2 <- lm(ave_ae_Transfer~rand.c+det_Target.c,
            data=MERGED)
 summary(mod2)
-#plot(mod2)
-
-# Y ~ X + M
-mod3 <- lm(ave_ae_Transfer~rand.c*det_Target.c,
-           data=MERGED)
-summary(mod3)
-vif(mod3)
-#plot(mod3)
+vif(mod2)
 
 head(MERGED)
-ggplot(MERGED, aes(x = det_Target , y = ave_ae_Transfer)) +
+p<-ggplot(MERGED, aes(x = det_Target , y = ave_ae_Transfer)) +
   geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  stat_smooth(method="lm", se=FALSE) + 
   scale_color_manual(values=c("black", "firebrick"))+
   scale_fill_manual(values=c("black", "red"))+
   labs(col="Group", fill="Group")+
@@ -826,6 +836,14 @@ ggplot(MERGED, aes(x = det_Target , y = ave_ae_Transfer)) +
         legend.title=element_blank(),
         legend.position = "bottom")
 
+ggMarginal(p,
+           type = 'boxplot',
+           margins = 'both',
+           size = 5, colour = 'black',
+           groupFill = TRUE)
+
+
+
 # 5.0. Correlations with Effort/Estimation Accuracy ----------------------------
 head(ACQ3)
 EEM <- ACQ3 %>% group_by(participant) %>% summarize(EEM = mean(error_estimate_AE, na.rm=TRUE))
@@ -833,9 +851,9 @@ EEM <- ACQ3 %>% group_by(participant) %>% summarize(EEM = mean(error_estimate_AE
 head(MERGED)
 MERGED <- merge(MERGED, EEM, by="participant") 
 head(MERGED)
-ggplot(MERGED, aes(x = det_Target , y = EEM)) +
+p <- ggplot(MERGED, aes(x = det_Target , y = EEM)) +
   geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  stat_smooth(method="lm", se=FALSE) + 
   scale_color_manual(values=c("black", "firebrick"))+
   scale_fill_manual(values=c("black", "red"))+
   labs(col="Group", fill="Group")+
@@ -851,23 +869,20 @@ ggplot(MERGED, aes(x = det_Target , y = EEM)) +
         legend.title=element_blank(),
         legend.position = "bottom")
 
-# Y ~ X
-mod1 <- lm(EEM~rand.c,
+ggMarginal(p,
+           type = 'boxplot',
+           margins = 'both',
+           size = 5, colour = 'black',
+           groupFill = TRUE)
+
+mod1 <- lm(det_Target~rand.c+EEM,
            data=MERGED)
 summary(mod1)
-#plot(mod1)
 
-# M ~ X
-mod2 <- lm(det_Target~rand.c,
+mod2 <- lm(EEM~rand.c+det_Target.c,
            data=MERGED)
 summary(mod2)
-#plot(mod2)
 
-# Y ~ X + M
-mod3 <- lm(EEM~rand.c*det_Target.c,
-           data=MERGED)
-summary(mod3)
-vif(mod3)
 
 # RSME
 list.files("./Data/")
@@ -877,14 +892,14 @@ head(RSME)
 MERGED <- merge(MERGED, RSME[, c("participant", "ME_AVE")], by="participant") 
 head(MERGED)
 
-ggplot(MERGED, aes(x = det_Target , y = ME_AVE)) +
+p <- ggplot(MERGED, aes(x = det_Target , y = ME_AVE)) +
   geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(aes(group=group, col=group), method="lm", se=FALSE) + 
+  stat_smooth(method="lm", se=FALSE) + 
   scale_color_manual(values=c("black", "firebrick"))+
   scale_fill_manual(values=c("black", "red"))+
   labs(col="Group", fill="Group")+
   scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Average Mental Effort (RSME)") +
+  scale_y_continuous(name = "Average Mental Effort (RSME)", limits=c(0,150)) +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -895,25 +910,19 @@ ggplot(MERGED, aes(x = det_Target , y = ME_AVE)) +
         legend.title=element_blank(),
         legend.position = "bottom")
 
+ggMarginal(p,
+           type = 'boxplot',
+           margins = 'both',
+           size = 5, colour = 'black',
+           groupFill = TRUE)
 
-
-# Y ~ X
-mod1 <- lm(ME_AVE~rand.c,
+mod1 <- lm(det_Target~rand.c+ME_AVE,
            data=MERGED)
 summary(mod1)
-#plot(mod1)
 
-# M ~ X
-mod2 <- lm(ME_AVE~rand.c,
+mod2 <- lm(ME_AVE~rand.c+det_Target.c,
            data=MERGED)
 summary(mod2)
-#plot(mod2)
-
-# Y ~ X + M
-mod3 <- lm(ME_AVE~rand.c*det_Target.c,
-           data=MERGED)
-summary(mod3)
-vif(mod3)
 
 
 
