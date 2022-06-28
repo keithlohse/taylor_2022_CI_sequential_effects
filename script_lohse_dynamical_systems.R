@@ -29,6 +29,9 @@ head(ACQ)
 ACQ2<-ACQ %>% group_by(participant, target) %>% 
   arrange(trial_total) %>%
   mutate(target_lag_absolute_error=lag(absolute_error),
+         target_lag_2_absolute_error=lag(absolute_error, 2),
+         target_lag_3_absolute_error=lag(absolute_error, 3),
+         target_lag_4_absolute_error=lag(absolute_error, 4),
          target_lag_constant_error=lag(constant_error),
          target_lag_2_constant_error=lag(constant_error, 2),
          target_lag_3_constant_error=lag(constant_error, 3),
@@ -47,6 +50,9 @@ ACQ2<-ACQ %>% group_by(participant, target) %>%
 ACQ3 <- ACQ2 %>% group_by(participant) %>% 
   arrange(trial_total) %>%
   mutate(trial_lag_absolute_error=lag(absolute_error),
+         trial_lag_2_absolute_error=lag(absolute_error, 2),
+         trial_lag_3_absolute_error=lag(absolute_error, 3),
+         trial_lag_4_absolute_error=lag(absolute_error, 4),
          trial_lag_constant_error=lag(constant_error),
          trial_lag_2_constant_error=lag(constant_error, 2),
          trial_lag_3_constant_error=lag(constant_error, 3),
@@ -66,6 +72,10 @@ ACQ3$target_AE_diff <- with(ACQ3, absolute_error-target_lag_absolute_error)
 
 ACQ3$trial_CE_diff <- with(ACQ3, constant_error-trial_lag_constant_error)
 ACQ3$trial_AE_diff <- with(ACQ3, absolute_error-trial_lag_absolute_error)
+
+# Aboslute Change in Constant Error
+ACQ3$target_absolute_change <- abs(ACQ3$target_CE_diff)
+ACQ3$trial_absolute_change <- abs(ACQ3$trial_CE_diff)
 
 table(ACQ3$participant, ACQ3$Target)
 
@@ -421,6 +431,7 @@ ezANOVA(
 )
 
 
+# Post-Hoc ANOVAs in Trial space or Target space
 ezANOVA(
   data=DATA_DET_LONG[DATA_DET_LONG$phase_space=="Trial",]
   , dv = .(det)
@@ -475,7 +486,7 @@ write.csv(MERGED, "./data_DYNAMIC_MERGED.csv")
 
 # 3.0. How do the groups differ in their correlation structure? ----
 
-# Computer correlation matrix within each person, get average correlation
+# Compute correlation matrix within each person, get average correlation
 # matrix in each group in Target:Trial space
 # Correlation Matrices in Target Space ----
 head(ACQ_by_TARGET)
@@ -595,14 +606,87 @@ BLOCK_COR_MAT
 
 
 
-# Multilevel Model Approach to Change ----
-head(ACQ3)
-ggplot(ACQ3[ACQ3$participant==105,], 
-       aes(x =target_lag_constant_error, y = constant_error)) +
-  geom_line() +
-  geom_point(shape=16) +
-  scale_x_continuous(name = expression(bold(Constant~Error~n[k]~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Change~AE~n[k]+1~(s))), limits=c(-1,1)) +
+
+
+
+# 4.0. Multilevel Model Approach to Change ----
+library(lme4); library(lmerTest)
+
+# Change following Correct versus KR Trials ----
+head(ACQ_by_TARGET)
+
+ACQ_by_TARGET$change_p <- ACQ_by_TARGET$target_absolute_change/ACQ_by_TARGET$target_lag_absolute_error 
+plot(y=ACQ_by_TARGET$change_p, x=ACQ_by_TARGET$target_lag_absolute_error )
+plot(y=ACQ_by_TARGET$target_absolute_change, x=ACQ_by_TARGET$target_lag_absolute_error )
+
+ACQ_by_TARGET$lag_KR <- factor(ifelse(ACQ_by_TARGET$target_lag_absolute_error <= 0.050,
+                      "No KR",
+                      ifelse(ACQ_by_TARGET$target_lag_absolute_error == "NA",
+                      NA,
+                      "KR")),
+                      levels=c("No KR", "KR"))
+summary(ACQ_by_TARGET$lag_KR)
+table(ACQ_by_TARGET$lag_KR, ACQ_by_TARGET$group)
+
+ggplot(ACQ_by_TARGET %>% filter(is.na(lag_KR)== FALSE), 
+       aes(x =lag_KR, y = target_absolute_change)) +
+  geom_point(aes(group=group, col=group), shape=16, size=1, alpha=0.2, 
+             position=position_jitterdodge(dodge.width=0.5)) +
+  geom_boxplot(aes(fill=group), outlier.shape = NA, alpha=0.4,
+               position=position_dodge(width=0.5), width=0.5)+
+  facet_wrap(~block, ncol=1)+
+  scale_fill_manual(values=c("grey", "firebrick"))+
+  scale_color_manual(values=c("grey40", "firebrick"))+
+  stat_smooth(method="lm", formula = y~x+I(x^2)+I(x^3), se=FALSE, col="blue")+
+  scale_x_discrete(name = "Feedback Received") +
+  scale_y_continuous(name = expression(bold(Change~n[k]+1~(s))), limits=c(0,1)) +
+  theme_bw()+
+  labs(fill="Group", col="Group")+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        legend.title=element_text(size=12, face="bold"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.position = "bottom")
+
+
+ACQ_by_KR <- ACQ_by_TARGET %>% filter(is.na(lag_KR)== FALSE) %>%
+  group_by(participant, block, lag_KR) %>%
+  summarize(group = group[1],
+    mean_change = mean(target_absolute_change))
+head(ACQ_by_KR)
+
+KR_RE_mod <- lmer(mean_change~
+       # Fixed Effects 
+       group*lag_KR*block+
+       # Random Effects
+       (1|participant)+(1|block:participant)+(1|lag_KR:participant),
+     data=ACQ_by_KR, 
+     REML=TRUE,
+     control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
+
+anova(KR_RE_mod)
+summary(KR_RE_mod)
+
+with(ACQ_by_KR, aggregate(x=mean_change, by=list(group), FUN=mean))
+with(ACQ_by_KR, aggregate(x=mean_change, by=list(group, lag_KR), FUN=mean))
+with(ACQ_by_KR, aggregate(x=mean_change, by=list(lag_KR, block), FUN=mean))
+
+          
+# Change Following KR Trials -----
+ACQ4 <- ACQ_by_TARGET %>% filter(target_lag_absolute_error > 0.050)
+
+# Graphs for individual participants, 101 and 107 blocked, 102 and 126, random
+ggplot(ACQ4[ACQ4$participant==126,], 
+       aes(x =target_lag_absolute_error, y = target_absolute_change)) +
+  geom_line(col="grey") +
+  geom_point(shape=16, col="grey") +
+  facet_wrap(~block)+
+  stat_smooth(method="lm", formula = y~x+I(x^2), se=FALSE, col="firebrick")+
+  scale_x_continuous(name = expression(bold(Absolute~Error~n[k]~(s))), limits=c(0,1)) +
+  scale_y_continuous(name = expression(bold(Change~n[k]+1~(s))), limits=c(0,1)) +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -613,132 +697,154 @@ ggplot(ACQ3[ACQ3$participant==105,],
         strip.text = element_text(size=12, face="bold"),
         legend.position = "bottom")
 
-library(lme4); library(lmerTest)
-target_mod_CE <- lmer(constant_error~
-                # Fixed Effects 
-                group*target_lag_constant_error+
-                group*target_lag_2_constant_error+
-                group*target_lag_3_constant_error+
-                group*target_lag_4_constant_error+
-                # Random Effects
-                (1+target_lag_constant_error+
-                   target_lag_2_constant_error+
-                   target_lag_3_constant_error+
-                   target_lag_4_constant_error|participant)+
-                (1|block),
-              data=ACQ_by_TARGET, REML=FALSE,
-              control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
 
-summary(target_mod_CE)
-anova(target_mod_CE)
+head(ACQ4)
+mean(ACQ4$target_lag_absolute_error)
+ACQ4$target_lag_absolute_error.c <- ACQ4$target_lag_absolute_error - 0.500
 
-target_mod_AE <- lmer(absolute_error~
+RE_mod_CHANGE_linear <- lmer(target_absolute_change~
+                            # Fixed Effects 
+                            1+target_lag_absolute_error+
+                            # Random Effects
+                            (1+target_lag_absolute_error|participant)+
+                            (1|block),
+                          data=ACQ4, REML=FALSE,
+                          control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
+
+
+RE_mod_CHANGE_quad <- lmer(target_absolute_change~
+                            # Fixed Effects 
+                            1+target_lag_absolute_error+
+                             I(target_lag_absolute_error^2)+
+                             # Random Effects
+                            (1+target_lag_absolute_error+
+                               I(target_lag_absolute_error^2)|participant)+
+                            (1|block),
+                          data=ACQ4, REML=FALSE,
+                          control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
+
+
+
+RE_mod_CHANGE_cube <- lmer(target_absolute_change~
+                             # Fixed Effects 
+                             1+target_lag_absolute_error+
+                             I(target_lag_absolute_error^2)+
+                             I(target_lag_absolute_error^3)+
+                             # Random Effects
+                             (1+target_lag_absolute_error+
+                                I(target_lag_absolute_error^2)|participant)+
+                             (1|block),
+                           data=ACQ4, REML=FALSE,
+                           control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
+
+summary(RE_mod_CHANGE_cube)
+
+anova(RE_mod_CHANGE_linear, RE_mod_CHANGE_quad, RE_mod_CHANGE_cube)
+
+
+target_mod_CHANGE <- lmer(target_absolute_change~
                         # Fixed Effects 
-                        group*target_lag_constant_error+
-                        group*I(target_lag_constant_error^2)+
+                        block*group*target_lag_absolute_error+
+                        block*group*I(target_lag_absolute_error^2)+
+                        block*group*I(target_lag_absolute_error^3)+
                         # Random Effects
-                        (1+target_lag_constant_error+
-                           I(target_lag_constant_error^2)|participant)+
-                        (1|block)+(1|Target),
-                      data=ACQ_by_TARGET, REML=FALSE,
+                        (1+target_lag_absolute_error+
+                           I(target_lag_absolute_error^2)|participant)+
+                        (1|Target),
+                      data=ACQ4, REML=TRUE,
                       control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
 
-summary(target_mod_AE)
-anova(target_mod_AE)
+summary(target_mod_CHANGE)
+anova(target_mod_CHANGE)
 
-lag1_error <- c(rep(seq(from=-1, to=1, by=0.1),2))
-group <- c(rep("Blocked", 21), rep("Random", 21))
-phase <- c(rep("Target", 42))
-pred_CE <-ifelse(group=="Blocked",
-                 -1.863e-04+3.866e-02*lag1_error,
-                 (-1.863e-04+1.801e-02)+(3.866e-02+7.505e-02)*lag1_error)
+# Blocked 
+1.099e-01
+1.099e-01-4.306e-03
+1.099e-01+1.225e-02
 
-pred_AE <-ifelse(group=="Blocked",
-                 0.142482+0.007441*lag1_error+0.225396*I(lag1_error^2),
-                 (0.142482+0.032299)+
-                   (0.007441+0.018580)*lag1_error+
-                   (0.225396-0.084151)*I(lag1_error^2))
+# Random 
+1.099e-01+7.465e-02
+1.099e-01-4.306e-03+7.465e-02+5.288e-03
+1.099e-01+1.225e-02+7.465e-02-6.534e-02
+
+target_mod_CHANGE.c <- lmer(target_absolute_change~
+                            # Fixed Effects 
+                            block*group*target_lag_absolute_error.c+
+                            block*group*I(target_lag_absolute_error.c^2)+
+                            block*group*I(target_lag_absolute_error.c^3)+
+                            # Random Effects
+                            (1+target_lag_absolute_error.c+
+                               I(target_lag_absolute_error.c^2)|participant)+
+                            (1|Target),
+                          data=ACQ4, REML=TRUE,
+                          control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
+
+summary(target_mod_CHANGE.c)
+anova(target_mod_CHANGE)
+
+# Blocked
+4.617e-01
+4.617e-01+8.530e-03
+4.617e-01-1.908e-02
+
+# Random
+4.617e-01-3.705e-03
+4.617e-01+8.530e-03-3.705e-03-5.803e-03
+4.617e-01-1.908e-02-3.705e-03-3.520e-02
 
 
-TARGET_PRED_DATA <- data.frame(group, phase, lag1_error, 
-                               pred_CE, pred_AE)
+block <- c(rep(c(rep("1", 21), rep("2", 21), rep("3", 21)),2))
+lag1_error <- c(rep(c(rep(seq(from=0, to=1, by=0.05),3)),2))
+group <- c(rep("Blocked", 63), rep("Random", 63))
 
-summary(TARGET_PRED_DATA)
-head(TARGET_PRED_DATA)
+pred_AE <- c(1:length(block))
 
-ggplot(TARGET_PRED_DATA, aes(x =lag1_error, y = pred_CE)) +
-  geom_line(aes(col=group), lwd=1.5) +
-  scale_x_continuous(limits=c(-1,1))
+TARGET_PRED_DATA <- data.frame(group, block, lag1_error, pred_AE)
+
+LIST <- unique(block)
+
+for (i in 1:length(TARGET_PRED_DATA$pred_AE)){
+  if(TARGET_PRED_DATA$block[i]=="1" && TARGET_PRED_DATA$group[i]=="Blocked"){
+    TARGET_PRED_DATA$pred_AE[i] <- (1.099e-01)+(6.977e-01)*TARGET_PRED_DATA$lag1_error[i]+(-1.457e-01)*(TARGET_PRED_DATA$lag1_error[i]^2)+(3.149e-01)*(TARGET_PRED_DATA$lag1_error[i]^3)
+  } 
   
-summary(ACQ_by_TARGET$constant_error)
+  else if(TARGET_PRED_DATA$block[i]=="2" && TARGET_PRED_DATA$group[i]=="Blocked"){
+    TARGET_PRED_DATA$pred_AE[i] <- (1.099e-01-4.306e-03)+(6.977e-01-2.225e-01)*TARGET_PRED_DATA$lag1_error[i]+(-1.457e-01+9.527e-01)*(TARGET_PRED_DATA$lag1_error[i]^2)+(3.149e-01-9.129e-01)*(TARGET_PRED_DATA$lag1_error[i]^3)
+  } 
+  
+  else if(TARGET_PRED_DATA$block[i]=="3" && TARGET_PRED_DATA$group[i]=="Blocked"){
+    TARGET_PRED_DATA$pred_AE[i] <- (1.099e-01+1.225e-02)+(6.977e-01-4.219e-01)*TARGET_PRED_DATA$lag1_error[i]+(-1.457e-01+1.054e+00)*(TARGET_PRED_DATA$lag1_error[i]^2)+(3.149e-01-6.705e-01)*(TARGET_PRED_DATA$lag1_error[i]^3)
+  } 
+  
+  else if(TARGET_PRED_DATA$block[i]=="1" && TARGET_PRED_DATA$group[i]=="Random"){
+    TARGET_PRED_DATA$pred_AE[i] <- (1.099e-01+7.465e-02)+(6.977e-01-7.324e-01)*TARGET_PRED_DATA$lag1_error[i]+(-1.457e-01+1.766e+00)*(TARGET_PRED_DATA$lag1_error[i]^2)+(3.149e-01-1.230e+00)*(TARGET_PRED_DATA$lag1_error[i]^3)
+  } 
+  
+  else if(TARGET_PRED_DATA$block[i]=="2" && TARGET_PRED_DATA$group[i]=="Random"){
+    TARGET_PRED_DATA$pred_AE[i] <- (1.099e-01-4.306e-03+7.465e-02+5.288e-03)+(6.977e-01-2.225e-01-7.324e-01-1.585e-02)*TARGET_PRED_DATA$lag1_error[i]+(-1.457e-01+9.527e-01+1.766e+00-1.144e-01)*(TARGET_PRED_DATA$lag1_error[i]^2)+(3.149e-01-9.129e-01-1.230e+00+2.035e-01)*(TARGET_PRED_DATA$lag1_error[i]^3)
+  } 
+  
+  else if(TARGET_PRED_DATA$block[i]=="3" && TARGET_PRED_DATA$group[i]=="Random"){
+    TARGET_PRED_DATA$pred_AE[i] <- (1.099e-01+1.225e-02+7.465e-02-6.534e-02)+(6.977e-01-4.219e-01-7.324e-01+8.522e-01)*TARGET_PRED_DATA$lag1_error[i]+(-1.457e-01+1.054e+00+1.766e+00-2.433e+00)*(TARGET_PRED_DATA$lag1_error[i]^2)+(3.149e-01-6.705e-01-1.230e+00+1.698e+00)*(TARGET_PRED_DATA$lag1_error[i]^3)
+  } 
+  
+  else {TARGET_PRED_DATA$pred_AE[i] <- NA}
+  
+}
 
-# Trial Models
-trial_mod_CE <- lmer(constant_error~
-                     # Fixed Effects 
-                     group*trial_lag_constant_error+
-                     group*trial_lag_2_constant_error+
-                     group*trial_lag_3_constant_error+
-                     group*trial_lag_4_constant_error+
-                     # Random Effects
-                     (1+trial_lag_constant_error+
-                        trial_lag_2_constant_error+
-                        trial_lag_3_constant_error+
-                        trial_lag_4_constant_error|participant)+
-                     (1|block),
-                   data=ACQ_by_TRIAL, REML=FALSE,
-                   control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
-
-summary(trial_mod_CE)
-anova(trial_mod_CE)
-
-trial_mod_AE <- lmer(absolute_error~
-                        # Fixed Effects 
-                        group*trial_lag_constant_error+
-                        group*I(trial_lag_constant_error^2)+
-                        # Random Effects
-                        (1+trial_lag_constant_error+
-                           I(trial_lag_constant_error^2)|participant)+
-                        (1|block)+(1|Target),
-                      data=ACQ_by_TRIAL, REML=FALSE,
-                      control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
-
-summary(trial_mod_AE)
-anova(trial_mod_AE)
-
-lag1_error <- c(rep(seq(from=-1, to=1, by=0.1),2))
-group <- c(rep("Blocked", 21), rep("Random", 21))
-phase <- c(rep("Trial", 42))
-pred_CE <-ifelse(group=="Blocked",
-                 -0.001718+0.037837*lag1_error,
-                 (-0.001718+0.024816)+(0.037837-0.001376)*lag1_error)
-
-pred_AE <-ifelse(group=="Blocked",
-                 0.1437246+0.0076990*lag1_error+0.2171921*I(lag1_error^2),
-                 (0.1437246+0.0337704)+
-                   (0.0076990-0.0005079)*lag1_error+
-                   (0.2171921-0.1076113)*I(lag1_error^2))
-
-TRIAL_PRED_DATA <- data.frame(group, phase, lag1_error, 
-                               pred_CE, pred_AE)
-
-summary(TRIAL_PRED_DATA)
-head(TRIAL_PRED_DATA)
-
-ggplot(TRIAL_PRED_DATA, aes(x =lag1_error, y = pred_CE)) +
-  geom_line(aes(col=group), lwd=1.5) +
-  scale_x_continuous(limits=c(-1,1))
-
-PRED_DATA <- rbind(TARGET_PRED_DATA, TRIAL_PRED_DATA)
-head(PRED_DATA)
-
-ggplot(PRED_DATA, aes(x =lag1_error, y = pred_CE)) +
-  geom_line(aes(lty=phase, col=group), lwd=1.5) +
-  facet_wrap(~phase)+
-  scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Constant~Error~n[k]~(s)))) +
+ggplot(ACQ4, aes(x =target_lag_absolute_error, y = target_absolute_change)) +
+  #geom_point(aes(group=group, col=group), alpha=0.2, shape=16)+
+  geom_abline(intercept=0, slope=1, lty=2)+
+  stat_smooth(aes(group=participant), method="lm",
+              formula = y~x+I(x^2), alpha=0.8, se=FALSE, lwd=0.5, col="grey80") +
+  geom_line(data= TARGET_PRED_DATA, aes(x =lag1_error, y = pred_AE, col=group), 
+            lwd=1) +
+  facet_wrap(~group+block)+
+  scale_x_continuous(name = expression(bold(Absolute~Error~n[k]~(s))), limits=c(0,1)) +
+  scale_y_continuous(name = expression(bold(Change~n[k]+1~(s))), limits=c(0,1)) +
   theme_bw()+
   scale_color_manual(values=c("black", "firebrick"))+
-  labs(col="Group", lty="Phase")+
+  labs(col="Group", lty="Group")+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
         axis.title=element_text(size=12, face="bold"),
@@ -749,29 +855,64 @@ ggplot(PRED_DATA, aes(x =lag1_error, y = pred_CE)) +
         legend.position = "bottom")
 
 
-ggplot(PRED_DATA, aes(x =lag1_error, y = pred_AE)) +
-  geom_line(aes(lty=phase, col=group), lwd=1.5) +
-  facet_wrap(~phase)+
-  scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-1,1)) +
-  scale_y_continuous(name = expression(bold(Absolute~Error~n[k]~(s)))) +
-  theme_bw()+
-  scale_color_manual(values=c("black", "firebrick"))+
-  labs(col="Group", lty="Phase")+
-  theme(axis.text=element_text(size=12, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
-        legend.title=element_blank(),
-        legend.position = "bottom")
 
 
-# 4.0 Correlations with long-term learning ----
+
+RE_mod <- lmer(target_absolute_change~
+                             # Fixed Effects 
+                             1+
+                             # Random Effects
+                             (1+target_lag_absolute_error+
+                                I(target_lag_absolute_error^2)|participant)+
+                             (1|block),
+                           data=ACQ4, REML=FALSE,
+                           control=lmerControl(optimizer="bobyqa",optCtrl=list(maxfun=5e5)))
+
+RE_MOD <- rownames_to_column(ranef(RE_mod)$participant)
+head(RE_MOD)
+head(MERGED)
+MERGED <- merge(x=MERGED, y=RE_MOD, by.x="participant", by.y="rowname")
+head(MERGED)
+
+
+
+
+# 5.0 Correlations with long-term learning ----
 # Contrast coding group and det_target
 MERGED$rand.c <-as.numeric(MERGED$group)-1.5
 MERGED$det_Target.c <- MERGED$det_Target - mean(MERGED$det_Target)
+MERGED$intercept.c <- MERGED$`(Intercept)` - mean(MERGED$`(Intercept)`)
+MERGED$slope.c <- MERGED$target_lag_absolute_error - mean(MERGED$target_lag_absolute_error)
 
+
+head(ACQ3)
+PRAC <- ACQ3 %>% group_by(participant) %>%
+  summarize(acq_CE = mean(constant_error, na.rm=TRUE),
+            acq_AE = mean(absolute_error, na.rm=TRUE),
+            acq_VE = sd(constant_error, na.rm=TRUE))
+
+MERGED <- merge(MERGED, PRAC, by="participant")
+
+
+head(ACQ_by_TARGET)
+AFTER_KR <- ACQ_by_TARGET %>% select(participant, lag_KR, target_absolute_change) %>%
+  group_by(participant, lag_KR) %>%
+  summarize(mean_Change = mean(abs(target_absolute_change), na.rm=TRUE),
+            SD_Change = sd(target_absolute_change, na.rm=TRUE)) %>%
+  pivot_wider(names_from = lag_KR, values_from=mean_Change:SD_Change)
+
+MERGED <- merge(MERGED, AFTER_KR, by="participant")
+head(MERGED)
+
+plot(x=MERGED$`SD_Change_No KR`, y=MERGED$acq_VE)
+plot(x=MERGED$`mean_Change_No KR`, y=MERGED$acq_AE)
+
+plot(x=MERGED$`SD_Change_No KR`, y=MERGED$ave_ae_Retention)
+plot(x=MERGED$`mean_Change_No KR`, y=MERGED$ave_ae_Retention)
+
+
+
+# Regression Analysis: Det on AE Retention -------------------------------------
 mod1 <- lm(det_Target~rand.c+ave_ae_Retention,
            data=MERGED)
 summary(mod1)
@@ -784,12 +925,14 @@ vif(mod2)
 head(MERGED)
 p <- ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
   geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(method="lm", se=FALSE) + 
+  stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
+              lwd=0.75) + 
+  #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
   scale_color_manual(values=c("black", "firebrick"))+
   scale_fill_manual(values=c("black", "red"))+
-  labs(col="Group", fill="Group")+
+  labs(col="Group", fill="Group", lty="Group")+
   scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Average Retention AE (s)", limits = c(0,1)) +
+  scale_y_continuous(name = "Average Retention AE (s)", limits = c(0,0.75)) +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -807,25 +950,33 @@ ggMarginal(p,
            groupFill = TRUE)
 
 
-# Mediation Analysis: AE on Transfer ------------------------------------------
-mod1 <- lm(det_Target~rand.c+ave_ae_Transfer,
+
+# Regression Analysis: Intercept CHANGE on Retention ---------------------------
+mod1 <- lm(`mean_Change_No KR`~rand.c+ave_ae_Retention,
            data=MERGED)
 summary(mod1)
 
-mod2 <- lm(ave_ae_Transfer~rand.c+det_Target.c,
+mod2 <- lm(ave_ae_Retention~rand.c+`mean_Change_No KR`,
            data=MERGED)
 summary(mod2)
 vif(mod2)
 
+mod3 <- lm(ave_ae_Retention~rand.c+`mean_Change_No KR`+acq_AE,
+           data=MERGED)
+summary(mod3)
+vif(mod3)
+
 head(MERGED)
-p<-ggplot(MERGED, aes(x = det_Target , y = ave_ae_Transfer)) +
+p<-ggplot(MERGED, aes(x = `mean_Change_No KR`, y = ave_ae_Retention)) +
   geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(method="lm", se=FALSE) + 
+  stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
+              lwd=0.75) + 
+  #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
   scale_color_manual(values=c("black", "firebrick"))+
   scale_fill_manual(values=c("black", "red"))+
-  labs(col="Group", fill="Group")+
-  scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Average Tranfer AE (s)", limits = c(0,1)) +
+  labs(col="Group", fill="Group", lty="Group")+
+  scale_x_continuous(name = "Intercept in Mixed-Model") +
+  scale_y_continuous(name = "Average Retention AE (s)") +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -844,85 +995,26 @@ ggMarginal(p,
 
 
 
-# 5.0. Correlations with Effort/Estimation Accuracy ----------------------------
-head(ACQ3)
-EEM <- ACQ3 %>% group_by(participant) %>% summarize(EEM = mean(error_estimate_AE, na.rm=TRUE))
 
+
+
+
+
+# Sensitivity analyses controlling for practice performance
 head(MERGED)
-MERGED <- merge(MERGED, EEM, by="participant") 
-head(MERGED)
-p <- ggplot(MERGED, aes(x = det_Target , y = EEM)) +
-  geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(method="lm", se=FALSE) + 
-  scale_color_manual(values=c("black", "firebrick"))+
-  scale_fill_manual(values=c("black", "red"))+
-  labs(col="Group", fill="Group")+
-  scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Error Estimation Mismatch") +
-  theme_bw()+
-  theme(axis.text=element_text(size=12, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
-        legend.title=element_blank(),
-        legend.position = "bottom")
+mod_a <- lm(ave_ae_Retention~rand.c+intercept.c+acq_CE, data=MERGED)
+summary(mod_a)
+vif(mod_a)
+plot(y=MERGED$intercept.c, x=MERGED$acq_CE)
 
-ggMarginal(p,
-           type = 'boxplot',
-           margins = 'both',
-           size = 5, colour = 'black',
-           groupFill = TRUE)
+mod_b <- lm(ave_ae_Retention~rand.c+intercept.c+acq_AE, data=MERGED)
+summary(mod_b)
+vif(mod_b)
+plot(y=MERGED$intercept.c, x=MERGED$acq_AE)
 
-mod1 <- lm(det_Target~rand.c+EEM,
-           data=MERGED)
-summary(mod1)
-
-mod2 <- lm(EEM~rand.c+det_Target.c,
-           data=MERGED)
-summary(mod2)
-
-
-# RSME
-list.files("./Data/")
-RSME<-read.csv("./Data/data_RSME.csv", header = TRUE, sep=",",  
-              na.strings=c("NA","NaN"," ",""), stringsAsFactors = TRUE)
-head(RSME)
-MERGED <- merge(MERGED, RSME[, c("participant", "ME_AVE")], by="participant") 
-head(MERGED)
-
-p <- ggplot(MERGED, aes(x = det_Target , y = ME_AVE)) +
-  geom_point(aes(col=group), shape=16)+ 
-  stat_smooth(method="lm", se=FALSE) + 
-  scale_color_manual(values=c("black", "firebrick"))+
-  scale_fill_manual(values=c("black", "red"))+
-  labs(col="Group", fill="Group")+
-  scale_x_continuous(name = "Determinant over Five Trials") +
-  scale_y_continuous(name = "Average Mental Effort (RSME)", limits=c(0,150)) +
-  theme_bw()+
-  theme(axis.text=element_text(size=12, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
-        panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
-        legend.title=element_blank(),
-        legend.position = "bottom")
-
-ggMarginal(p,
-           type = 'boxplot',
-           margins = 'both',
-           size = 5, colour = 'black',
-           groupFill = TRUE)
-
-mod1 <- lm(det_Target~rand.c+ME_AVE,
-           data=MERGED)
-summary(mod1)
-
-mod2 <- lm(ME_AVE~rand.c+det_Target.c,
-           data=MERGED)
-summary(mod2)
-
+mod_c <- lm(ave_ae_Retention~rand.c+intercept.c+acq_VE, data=MERGED)
+summary(mod_c)
+vif(mod_c)
+plot(y=MERGED$intercept.c, x=MERGED$acq_VE)
 
 
