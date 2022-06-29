@@ -379,13 +379,13 @@ DATA_DET_LONG$phase_space  <- factor(DATA_DET_LONG$phase_space,
                                      labels = c("Target", "Trial"))
 ggplot(DATA_DET_LONG, 
        aes(x=lag, y = det)) +
-  geom_point(aes(group=group, col=group), shape=16, alpha=0.5, 
+  geom_point(aes(group=group, col=group), shape=16, alpha=0.8, 
              position=position_jitterdodge())+
   geom_boxplot(aes(group=paste(lag, group), fill=group), alpha=0.5,
                position=position_dodge(), outlier.shape = NA)+
   facet_wrap(~phase_space)+
-  scale_color_manual(values=c("black", "firebrick"))+
-  scale_fill_manual(values=c("black", "firebrick"))+
+  scale_color_manual(values=c("grey", "firebrick"))+
+  scale_fill_manual(values=c("grey", "firebrick"))+
   scale_x_discrete(name = "Lag") +
   scale_y_continuous(name = "Determinant") +
   labs(fill = "Group", col="Group")+ 
@@ -433,7 +433,7 @@ ezANOVA(
 
 # Post-Hoc ANOVAs in Trial space or Target space
 ezANOVA(
-  data=DATA_DET_LONG[DATA_DET_LONG$phase_space=="Trial",]
+  data=DATA_DET_LONG[DATA_DET_LONG$phase_space=="Target",]
   , dv = .(det)
   , wid =.(participant)
   , within = .(lag)
@@ -625,8 +625,19 @@ ACQ_by_TARGET$lag_KR <- factor(ifelse(ACQ_by_TARGET$target_lag_absolute_error <=
                       NA,
                       "KR")),
                       levels=c("No KR", "KR"))
+
 summary(ACQ_by_TARGET$lag_KR)
 table(ACQ_by_TARGET$lag_KR, ACQ_by_TARGET$group)
+
+ACQ_by_TARGET %>% group_by(participant, group) %>%
+  summarize(No_KR = sum(lag_KR=="No KR"),
+          KR = sum(lag_KR=="KR"),
+          Total = n()) %>%
+  mutate(No_KR_p = No_KR/Total,
+         KR_p = KR/Total) %>%
+  group_by(group) %>%
+  summarize(ave_No_KR_p=mean(No_KR_p),
+            ave_KR_p=mean(KR_p))
 
 ggplot(ACQ_by_TARGET %>% filter(is.na(lag_KR)== FALSE), 
        aes(x =lag_KR, y = target_absolute_change)) +
@@ -928,8 +939,8 @@ p <- ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
   stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
               lwd=0.75) + 
   #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
-  scale_color_manual(values=c("black", "firebrick"))+
-  scale_fill_manual(values=c("black", "red"))+
+  scale_color_manual(values=c("grey", "firebrick"))+
+  scale_fill_manual(values=c("grey", "firebrick"))+
   labs(col="Group", fill="Group", lty="Group")+
   scale_x_continuous(name = "Determinant over Five Trials") +
   scale_y_continuous(name = "Average Retention AE (s)", limits = c(0,0.75)) +
@@ -951,7 +962,8 @@ ggMarginal(p,
 
 
 
-# Regression Analysis: Intercept CHANGE on Retention ---------------------------
+# Regression Analysis: Mean CHANGE following No KR on Retention ---------------------------
+head(MERGED)
 mod1 <- lm(`mean_Change_No KR`~rand.c+ave_ae_Retention,
            data=MERGED)
 summary(mod1)
@@ -961,10 +973,6 @@ mod2 <- lm(ave_ae_Retention~rand.c+`mean_Change_No KR`,
 summary(mod2)
 vif(mod2)
 
-mod3 <- lm(ave_ae_Retention~rand.c+`mean_Change_No KR`+acq_AE,
-           data=MERGED)
-summary(mod3)
-vif(mod3)
 
 head(MERGED)
 p<-ggplot(MERGED, aes(x = `mean_Change_No KR`, y = ave_ae_Retention)) +
@@ -973,9 +981,9 @@ p<-ggplot(MERGED, aes(x = `mean_Change_No KR`, y = ave_ae_Retention)) +
               lwd=0.75) + 
   #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
   scale_color_manual(values=c("black", "firebrick"))+
-  scale_fill_manual(values=c("black", "red"))+
+  scale_fill_manual(values=c("black", "firebrick"))+
   labs(col="Group", fill="Group", lty="Group")+
-  scale_x_continuous(name = "Intercept in Mixed-Model") +
+  scale_x_continuous(name = "Mean Change following no KR") +
   scale_y_continuous(name = "Average Retention AE (s)") +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
@@ -997,24 +1005,54 @@ ggMarginal(p,
 
 
 
+# Regression Analysis: Slope CHANGE on Retention ---------------------------
+mod1 <- lm(slope.c~rand.c+ave_ae_Retention,
+           data=MERGED)
+summary(mod1)
+
+mod2 <- lm(ave_ae_Retention~rand.c+slope.c,
+           data=MERGED)
+summary(mod2)
+vif(mod2)
 
 
-
-# Sensitivity analyses controlling for practice performance
 head(MERGED)
-mod_a <- lm(ave_ae_Retention~rand.c+intercept.c+acq_CE, data=MERGED)
-summary(mod_a)
-vif(mod_a)
-plot(y=MERGED$intercept.c, x=MERGED$acq_CE)
+p<-ggplot(MERGED, aes(x = intercept.c, y = ave_ae_Retention)) +
+  geom_point(aes(col=group), shape=16)+ 
+  stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
+              lwd=0.75) + 
+  #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
+  scale_color_manual(values=c("grey", "firebrick"))+
+  scale_fill_manual(values=c("grey", "firebrick"))+
+  labs(col="Group", fill="Group", lty="Group")+
+  scale_x_continuous(name = "Intercept in Mixed-Model") +
+  scale_y_continuous(name = "Average Retention AE (s)") +
+  theme_bw()+
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=12, color="black"),
+        axis.title=element_text(size=12, face="bold"),
+        plot.title=element_text(size=12, face="bold", hjust=0.5),
+        panel.grid.minor = element_blank(),
+        strip.text = element_text(size=12, face="bold"),
+        legend.title=element_blank(),
+        legend.position = "bottom")
 
-mod_b <- lm(ave_ae_Retention~rand.c+intercept.c+acq_AE, data=MERGED)
-summary(mod_b)
-vif(mod_b)
-plot(y=MERGED$intercept.c, x=MERGED$acq_AE)
-
-mod_c <- lm(ave_ae_Retention~rand.c+intercept.c+acq_VE, data=MERGED)
-summary(mod_c)
-vif(mod_c)
-plot(y=MERGED$intercept.c, x=MERGED$acq_VE)
+ggMarginal(p,
+           type = 'boxplot',
+           margins = 'both',
+           size = 5, colour = 'black',
+           groupFill = TRUE)
 
 
+head(MERGED)
+mod2 <- lm(ave_ae_Retention~rand.c+det_Target+acq_AE,
+           data=MERGED)
+summary(mod2)
+
+mod2 <- lm(ave_ae_Retention~rand.c+intercept.c+acq_AE,
+           data=MERGED)
+summary(mod2)
+
+mod2 <- lm(ave_ae_Retention~rand.c+slope.c+acq_AE,
+           data=MERGED)
+summary(mod2)
