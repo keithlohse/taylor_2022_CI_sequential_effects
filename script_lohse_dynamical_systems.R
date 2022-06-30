@@ -1017,7 +1017,7 @@ vif(mod2)
 
 
 head(MERGED)
-p<-ggplot(MERGED, aes(x = intercept.c, y = ave_ae_Retention)) +
+p<-ggplot(MERGED, aes(x = slope.c, y = ave_ae_Retention)) +
   geom_point(aes(col=group), shape=16)+ 
   stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
               lwd=0.75) + 
@@ -1025,7 +1025,7 @@ p<-ggplot(MERGED, aes(x = intercept.c, y = ave_ae_Retention)) +
   scale_color_manual(values=c("grey", "firebrick"))+
   scale_fill_manual(values=c("grey", "firebrick"))+
   labs(col="Group", fill="Group", lty="Group")+
-  scale_x_continuous(name = "Intercept in Mixed-Model") +
+  scale_x_continuous(name = "Slope in Mixed-Model") +
   scale_y_continuous(name = "Average Retention AE (s)") +
   theme_bw()+
   theme(axis.text=element_text(size=12, color="black"), 
