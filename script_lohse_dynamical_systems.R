@@ -124,14 +124,15 @@ head(POST)
 head(ACQ)
 ggplot(ACQ[ACQ$participant==132,], 
        aes(x=trial_total, y = constant_error)) +
-  geom_line(col="black", alpha=1)+
+  geom_line(col="black", alpha=1, lwd=0.5)+
   geom_point(aes(fill=Target), shape=21, size=2) +
-  facet_wrap(~Target)+
+  #facet_wrap(~Target)+
   scale_x_continuous(name = "Trial Number") +
-  scale_y_continuous(name = "Constant Error", limits=c(-1,1)) +
+  scale_y_continuous(name = "Constant Error", limits=c(-0.7,0.7)) +
+  scale_fill_manual(values=c("grey90", "grey60", "grey30"))+
   #labs(fill = "Group", col="Group", shape="Estimation", lty="Estimation")+ 
   theme_bw()+
-  theme(axis.text=element_text(size=10, color="black"), 
+  theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
         legend.title=element_text(size=12, face="bold"),
         axis.title=element_text(size=12, face="bold"),
@@ -202,10 +203,11 @@ ggplot(ACQ3, aes(x =target_lag_absolute_error, y = absolute_error)) +
 
 # Figure 3 D and C: Autocorrelations ----
 # Graphs for individual participants, 101 and 107 blocked, 102 and 126, random
-ggplot(ACQ[ACQ$participant==126,], 
+ggplot(ACQ[ACQ$participant==107,], 
        aes(x=trial_total, y = constant_error)) +
   geom_line(col="black", alpha=1)+
   geom_point(aes(fill=Target), shape=21, size=2) +
+  scale_fill_manual(values=c("grey90", "grey60", "grey30"))+
   facet_wrap(~Target, scales="free")+
   scale_x_continuous(name = "Trial Number") +
   scale_y_continuous(name = "Constant Error", limits=c(-0.5,0.5)) +
@@ -222,14 +224,16 @@ ggplot(ACQ[ACQ$participant==126,],
 
 # Graphs for individual participants, 101 and 107 blocked, 102 and 126, random
 
-cor(x =ACQ3[ACQ3$participant==126,]$target_lag_constant_error, 
-          y = ACQ3[ACQ3$participant==126,]$constant_error, use="complete.obs")
+cor(x =ACQ3[ACQ3$participant==107,]$target_lag_constant_error, 
+          y = ACQ3[ACQ3$participant==107,]$constant_error, use="complete.obs")
 
-ggplot(ACQ3[ACQ3$participant==126,], 
+ggplot(ACQ3[ACQ3$participant==107,], 
        aes(x =target_lag_constant_error, y = constant_error)) +
-  geom_path(aes(group=participant, col=Target), alpha=0.5)+
-  geom_point(aes(group=Target, col=Target), alpha=0.5) +
+  geom_path(aes(group=participant), col="black", alpha=0.5)+
+  geom_point(aes(group=Target, fill=Target), col="black", shape=21) +
   stat_ellipse(aes(group=participant), col="black", lwd=1.5, level=0.95)+
+  scale_fill_manual(values=c("grey90", "grey60", "grey30"))+
+  scale_color_manual(values=c("grey90", "grey60", "grey30"))+
   #scale_fill_colorblind()+
   #scale_colour_colorblind()+
   scale_x_continuous(name = expression(bold(Constant~Error~n[k]-1~(s))), limits=c(-0.5, 0.5)) +
@@ -379,24 +383,24 @@ DATA_DET_LONG$phase_space  <- factor(DATA_DET_LONG$phase_space,
                                      labels = c("Target", "Trial"))
 ggplot(DATA_DET_LONG, 
        aes(x=lag, y = det)) +
-  geom_point(aes(group=group, col=group), shape=16, alpha=0.8, 
+  geom_point(aes(group=group, fill=group), col="black", shape=21, alpha=0.5, 
              position=position_jitterdodge())+
   geom_boxplot(aes(group=paste(lag, group), fill=group), alpha=0.5,
                position=position_dodge(), outlier.shape = NA)+
   facet_wrap(~phase_space)+
-  scale_color_manual(values=c("grey", "firebrick"))+
-  scale_fill_manual(values=c("grey", "firebrick"))+
+  scale_fill_manual(values=c("grey90", "grey30"))+
+  scale_color_manual(values=c("grey90", "grey30"))+
   scale_x_discrete(name = "Lag") +
   scale_y_continuous(name = "Determinant") +
   labs(fill = "Group", col="Group")+ 
   theme_bw()+
-  theme(axis.text=element_text(size=10, color="black"), 
-        legend.text=element_text(size=12, color="black"),
-        legend.title=element_text(size=12, face="bold"),
-        axis.title=element_text(size=12, face="bold"),
-        plot.title=element_text(size=12, face="bold", hjust=0.5),
+  theme(axis.text=element_text(size=12, color="black"), 
+        legend.text=element_text(size=14, color="black"),
+        legend.title=element_text(size=14, face="bold"),
+        axis.title=element_text(size=14, face="bold"),
+        plot.title=element_text(size=14, face="bold", hjust=0.5),
         panel.grid.minor = element_blank(),
-        strip.text = element_text(size=12, face="bold"),
+        strip.text = element_text(size=14, face="bold"),
         legend.position = "bottom")
 
 
@@ -643,11 +647,11 @@ ggplot(ACQ_by_TARGET %>% filter(is.na(lag_KR)== FALSE),
        aes(x =lag_KR, y = target_absolute_change)) +
   geom_point(aes(group=group, col=group), shape=16, size=1, alpha=0.2, 
              position=position_jitterdodge(dodge.width=0.5)) +
-  geom_boxplot(aes(fill=group), outlier.shape = NA, alpha=0.4,
+  geom_boxplot(aes(fill=group), outlier.shape = NA,
                position=position_dodge(width=0.5), width=0.5)+
+  scale_fill_manual(values=c("grey60", "grey30"))+
+  scale_color_manual(values=c("grey60", "grey30"))+
   facet_wrap(~block, ncol=1)+
-  scale_fill_manual(values=c("grey", "firebrick"))+
-  scale_color_manual(values=c("grey40", "firebrick"))+
   stat_smooth(method="lm", formula = y~x+I(x^2)+I(x^3), se=FALSE, col="blue")+
   scale_x_discrete(name = "Feedback Received") +
   scale_y_continuous(name = expression(bold(Change~n[k]+1~(s))), limits=c(0,1)) +
@@ -695,7 +699,8 @@ ggplot(ACQ4[ACQ4$participant==126,],
   geom_line(col="grey") +
   geom_point(shape=16, col="grey") +
   facet_wrap(~block)+
-  stat_smooth(method="lm", formula = y~x+I(x^2), se=FALSE, col="firebrick")+
+  stat_smooth(method="lm", formula = y~x+I(x^2), 
+              se=FALSE, col="black", lty=2)+
   scale_x_continuous(name = expression(bold(Absolute~Error~n[k]~(s))), limits=c(0,1)) +
   scale_y_continuous(name = expression(bold(Change~n[k]+1~(s))), limits=c(0,1)) +
   theme_bw()+
@@ -845,16 +850,17 @@ for (i in 1:length(TARGET_PRED_DATA$pred_AE)){
 
 ggplot(ACQ4, aes(x =target_lag_absolute_error, y = target_absolute_change)) +
   #geom_point(aes(group=group, col=group), alpha=0.2, shape=16)+
-  geom_abline(intercept=0, slope=1, lty=2)+
+  geom_abline(intercept=0, slope=1, lty=1, col="red", lwd=0.5)+
   stat_smooth(aes(group=participant), method="lm",
               formula = y~x+I(x^2), alpha=0.8, se=FALSE, lwd=0.5, col="grey80") +
-  geom_line(data= TARGET_PRED_DATA, aes(x =lag1_error, y = pred_AE, col=group), 
-            lwd=1) +
+  geom_line(data= TARGET_PRED_DATA, aes(x =lag1_error, y = pred_AE, lty=group), 
+            lwd=1, col="black") +
   facet_wrap(~group+block)+
   scale_x_continuous(name = expression(bold(Absolute~Error~n[k]~(s))), limits=c(0,1)) +
   scale_y_continuous(name = expression(bold(Change~n[k]+1~(s))), limits=c(0,1)) +
   theme_bw()+
-  scale_color_manual(values=c("black", "firebrick"))+
+  scale_fill_manual(values=c("grey90", "grey30"))+
+  scale_color_manual(values=c("grey90", "grey30"))+
   labs(col="Group", lty="Group")+
   theme(axis.text=element_text(size=12, color="black"), 
         legend.text=element_text(size=12, color="black"),
@@ -900,7 +906,7 @@ head(ACQ3)
 PRAC <- ACQ3 %>% group_by(participant) %>%
   summarize(acq_CE = mean(constant_error, na.rm=TRUE),
             acq_AE = mean(absolute_error, na.rm=TRUE),
-            acq_VE = sd(constant_error, na.rm=TRUE))
+            acq_TE = sd(constant_error, na.rm=TRUE))
 
 MERGED <- merge(MERGED, PRAC, by="participant")
 
@@ -915,7 +921,7 @@ AFTER_KR <- ACQ_by_TARGET %>% select(participant, lag_KR, target_absolute_change
 MERGED <- merge(MERGED, AFTER_KR, by="participant")
 head(MERGED)
 
-plot(x=MERGED$`SD_Change_No KR`, y=MERGED$acq_VE)
+plot(x=MERGED$`SD_Change_No KR`, y=MERGED$acq_TE)
 plot(x=MERGED$`mean_Change_No KR`, y=MERGED$acq_AE)
 
 plot(x=MERGED$`SD_Change_No KR`, y=MERGED$ave_ae_Retention)
@@ -935,13 +941,13 @@ vif(mod2)
 
 head(MERGED)
 p <- ggplot(MERGED, aes(x = det_Target , y = ave_ae_Retention)) +
-  geom_point(aes(col=group), shape=16)+ 
+  geom_point(aes(col=group, shape=group))+ 
   stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
               lwd=0.75) + 
   #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
-  scale_color_manual(values=c("grey", "firebrick"))+
-  scale_fill_manual(values=c("grey", "firebrick"))+
-  labs(col="Group", fill="Group", lty="Group")+
+  scale_color_manual(values=c("grey70", "grey30"))+
+  scale_fill_manual(values=c("grey70", "grey30"))+
+  labs(col="Group", fill="Group", lty="Group", shape="Group")+
   scale_x_continuous(name = "Determinant over Five Trials") +
   scale_y_continuous(name = "Average Retention AE (s)", limits = c(0,0.75)) +
   theme_bw()+
@@ -976,13 +982,13 @@ vif(mod2)
 
 head(MERGED)
 p<-ggplot(MERGED, aes(x = `mean_Change_No KR`, y = ave_ae_Retention)) +
-  geom_point(aes(col=group), shape=16)+ 
+  geom_point(aes(col=group, shape=group))+ 
   stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
               lwd=0.75) + 
   #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
-  scale_color_manual(values=c("black", "firebrick"))+
-  scale_fill_manual(values=c("black", "firebrick"))+
-  labs(col="Group", fill="Group", lty="Group")+
+  scale_color_manual(values=c("grey70", "grey30"))+
+  scale_fill_manual(values=c("grey70", "grey30"))+
+  labs(col="Group", fill="Group", lty="Group", shape="Group")+
   scale_x_continuous(name = "Mean Change following no KR") +
   scale_y_continuous(name = "Average Retention AE (s)") +
   theme_bw()+
@@ -1018,13 +1024,13 @@ vif(mod2)
 
 head(MERGED)
 p<-ggplot(MERGED, aes(x = slope.c, y = ave_ae_Retention)) +
-  geom_point(aes(col=group), shape=16)+ 
+  geom_point(aes(col=group, shape=group))+ 
   stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
               lwd=0.75) + 
   #stat_ellipse(aes(group=group, col=group), lwd=0.75) +
-  scale_color_manual(values=c("grey", "firebrick"))+
-  scale_fill_manual(values=c("grey", "firebrick"))+
-  labs(col="Group", fill="Group", lty="Group")+
+  scale_color_manual(values=c("grey70", "grey30"))+
+  scale_fill_manual(values=c("grey70", "grey30"))+
+  labs(col="Group", fill="Group", lty="Group", shape="Group")+
   scale_x_continuous(name = "Slope in Mixed-Model") +
   scale_y_continuous(name = "Average Retention AE (s)") +
   theme_bw()+
