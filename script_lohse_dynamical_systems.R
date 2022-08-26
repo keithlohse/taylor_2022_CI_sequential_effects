@@ -1023,7 +1023,7 @@ vif(mod2)
 
 
 head(MERGED)
-p<-ggplot(MERGED, aes(x = slope.c, y = ave_ae_Retention)) +
+p<-ggplot(MERGED, aes(x = target_lag_absolute_error, y = ave_ae_Retention)) +
   geom_point(aes(col=group, shape=group))+ 
   stat_smooth(aes(lty=group, col=group), method="lm", se=FALSE, 
               lwd=0.75) + 
